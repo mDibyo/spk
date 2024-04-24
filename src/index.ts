@@ -27,6 +27,8 @@ class SpeechRecognizer {
         },
         { once: true }
       );
+      // TODO: Restart speech recognizer once more, in case user had a big pause.
+      // TODO: Add the ability to abort speech recognition
       this.recognition.addEventListener(
         "end",
         (event) => {
@@ -41,47 +43,75 @@ class SpeechRecognizer {
   }
 }
 
+class SpkButton {
+  static createButtonEl() {
+    const spkButton = document.createElement("button");
+    spkButton.textContent = "spk";
+    return spkButton;
+  }
+
+  constructor(private targetEl: HTMLTextAreaElement) {}
+  private buttonEl: HTMLButtonElement = SpkButton.createButtonEl();
+  private listening: boolean = false;
+
+  addtoDOM() {
+    this.buttonEl.style.position = "absolute";
+    this.targetEl.insertAdjacentElement("afterend", this.buttonEl);
+
+    // Position in bottom-right corner.
+    this.buttonEl.style.top = `${
+      this.targetEl.offsetTop +
+      this.targetEl.offsetHeight -
+      this.buttonEl.offsetHeight
+    }px`;
+    this.buttonEl.style.left = `${
+      this.targetEl.offsetLeft +
+      this.targetEl.offsetWidth -
+      this.buttonEl.offsetWidth
+    }px`;
+  }
+
+  addInteractions(recognizer: SpeechRecognizer) {
+    this.buttonEl.addEventListener("mousedown", (event) => {
+      // prevent textarea from being unfocused when the spk button is clicked.
+      event.preventDefault();
+    });
+
+    this.buttonEl.addEventListener("click", async () => {
+      this.listening = true;
+      this.buttonEl.disabled = true; // TODO: Add further indication that speech recognition is happening
+      this.targetEl.disabled = true;
+
+      const speech = await recognizer.recognize();
+
+      if (speech != null) {
+        this.targetEl.textContent += " " + speech;
+      }
+
+      this.targetEl.disabled = false;
+      this.buttonEl.disabled = false;
+      this.listening = false;
+
+      this.targetEl.focus();
+      this.targetEl.selectionStart = this.targetEl.selectionEnd =
+        this.targetEl.value.length;
+    });
+
+    this.targetEl.addEventListener("focusout", () => {
+      if (!this.listening) {
+        this.buttonEl.remove();
+      }
+    });
+  }
+}
+
 function modifyTextarea(
   recognizer: SpeechRecognizer,
   textArea: HTMLTextAreaElement
 ) {
-  const spkButton = document.createElement("button");
-  spkButton.textContent = "spk";
-  spkButton.addEventListener("mousedown", (event) => {
-    // prevent textarea from being unfocused when the spk button is clicked.
-    event.preventDefault();
-  });
-  spkButton.addEventListener("click", async () => {
-    spkButton.disabled = true;
-    textArea.disabled = true;
-    spkButton.textContent = "listening...";
-
-    const speech = await recognizer.recognize();
-
-    spkButton.textContent = "spk";
-    spkButton.disabled = false;
-
-    if (speech != null) {
-      textArea.textContent += " " + speech;
-    }
-    textArea.disabled = false;
-    textArea.focus();
-    textArea.selectionStart = textArea.selectionEnd = textArea.value.length;
-  });
-
-  spkButton.style.position = "absolute";
-  textArea.insertAdjacentElement("afterend", spkButton);
-
-  spkButton.style.top = `${
-    textArea.offsetTop + textArea.offsetHeight - spkButton.offsetHeight
-  }px`;
-  spkButton.style.left = `${
-    textArea.offsetLeft + textArea.offsetWidth - spkButton.offsetWidth
-  }px`;
-
-  textArea.addEventListener("focusout", () => {
-    spkButton.remove();
-  });
+  const spkButton = new SpkButton(textArea);
+  spkButton.addtoDOM();
+  spkButton.addInteractions(recognizer);
 }
 
 function elementIsTextArea(el: HTMLElement): el is HTMLTextAreaElement {
