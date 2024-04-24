@@ -6,7 +6,7 @@
   "scripts": {
     "start": "parcel watch src/manifest.json --host localhost --config @parcel/config-webextension",
     "build": "parcel build src/manifest.json --config @parcel/config-webextension",
-    "start-example": "reload --dir example/ --browser"
+    "start-example": "reload --dir example/  --start-page ${EXAMPLE:-default}.html --browser"
   },
   "author": "",
   "license": "ISC",
