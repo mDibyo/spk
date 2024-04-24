@@ -41,36 +41,68 @@ class SpeechRecognizer {
   }
 }
 
-function main() {
-  console.log("Hello again, Console World");
-
-  const recognizer = new SpeechRecognizer();
-  const recordBtn = document.getElementById(
-    "record"
-  ) as HTMLButtonElement | null;
-  const resultDiv = document.getElementById("result") as HTMLDivElement | null;
-
-  if (!recordBtn || !resultDiv) {
-    console.error("Recording interface not available");
-    return;
-  }
-
-  recordBtn.addEventListener("click", async () => {
-    recordBtn.disabled = true;
-    recordBtn.textContent = "Recording...";
+function modifyTextarea(
+  recognizer: SpeechRecognizer,
+  textArea: HTMLTextAreaElement
+) {
+  const spkButton = document.createElement("button");
+  spkButton.textContent = "spk";
+  spkButton.addEventListener("mousedown", (event) => {
+    // prevent textarea from being unfocused when the spk button is clicked.
+    event.preventDefault();
+  });
+  spkButton.addEventListener("click", async () => {
+    spkButton.disabled = true;
+    textArea.disabled = true;
+    spkButton.textContent = "listening...";
 
     const speech = await recognizer.recognize();
 
-    recordBtn.textContent = "Record";
-    recordBtn.disabled = false;
+    spkButton.textContent = "spk";
+    spkButton.disabled = false;
 
     if (speech != null) {
-      resultDiv.classList.remove("failed");
-      resultDiv.textContent = speech;
-    } else {
-      resultDiv.classList.add("failed");
-      resultDiv.textContent = null;
+      textArea.textContent += " " + speech;
     }
+    textArea.disabled = false;
+    textArea.focus();
+    textArea.selectionStart = textArea.selectionEnd = textArea.value.length;
+  });
+
+  spkButton.style.position = "absolute";
+  textArea.insertAdjacentElement("afterend", spkButton);
+
+  spkButton.style.top = `${
+    textArea.offsetTop + textArea.offsetHeight - spkButton.offsetHeight
+  }px`;
+  spkButton.style.left = `${
+    textArea.offsetLeft + textArea.offsetWidth - spkButton.offsetWidth
+  }px`;
+
+  textArea.addEventListener("focusout", () => {
+    spkButton.remove();
+  });
+}
+
+function elementIsTextArea(el: HTMLElement): el is HTMLTextAreaElement {
+  const tagName = el.tagName?.toLowerCase();
+  return tagName === "textarea";
+}
+
+function main() {
+  const recognizer = new SpeechRecognizer();
+
+  window.addEventListener("focusin", (event) => {
+    console.log(event.target);
+    if (event.target == null) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (elementIsTextArea(target)) {
+      modifyTextarea(recognizer, target);
+    }
+    // TODO: Add support for contenteditable div's like Gmail's message box
   });
 }
 
