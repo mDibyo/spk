@@ -4,6 +4,8 @@
 
 ### Install
 
+This project requires node (v18+). If your system node version is not up-to-date, consider using a version manager like [NVM](https://github.com/nvm-sh/nvm) to install and manage node versions.
+
 ```shell
 npm install
 ```
