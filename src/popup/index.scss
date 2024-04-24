@@ -1,0 +1,20 @@
+.input-item {
+  width: 400px;
+
+  label {
+    display: flex;
+    align-items: baseline;
+  }
+
+  input {
+    margin-left: 4px;
+    flex: 1;
+  }
+
+  &.valid input {
+    border-color: green;
+  }
+  &.invalid input {
+    border-color: red;
+  }
+}
