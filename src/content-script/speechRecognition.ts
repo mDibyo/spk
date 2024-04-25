@@ -1,3 +1,4 @@
+import { addUserEdit, getAllUserEdits } from "../storage";
 import {
   improveTextTranscription,
   listProperNouns,
@@ -28,7 +29,8 @@ export class SpeechRecognizer {
           const rawText = event.results[0][0].transcript;
           const correctedText = await improveTextTranscription(
             rawText,
-            this.properNouns
+            this.properNouns,
+            await getAllUserEdits()
           );
           resolve(correctedText);
         },
@@ -49,5 +51,11 @@ export class SpeechRecognizer {
 
       this.recognition.start();
     });
+  }
+
+  async recordUserEdit(beforeEdit: string, afterEdit: string) {
+    // TODO: Store edits at sentence-level rather than storing a single big edit.
+    // TODO: Decide which edits are useful examples and store only those.
+    await addUserEdit({ beforeEdit, afterEdit });
   }
 }

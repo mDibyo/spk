@@ -1,4 +1,4 @@
-import { getOpenAIAPIKey, setOpenAIAPIKey } from "../env";
+import { getOpenAIAPIKey, setOpenAIAPIKey } from "../storage";
 
 const openAPIKeyInputEl = document.getElementById(
   "openai-api-key"

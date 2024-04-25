@@ -32,6 +32,7 @@ class SpkButton {
 
   private buttonEl: HTMLButtonElement = SpkButton.createButtonEl();
   private listening: boolean = false;
+  private targetValueAfterInsertion: string | null = null;
   constructor(private targetEl: HTMLTextAreaElement) {}
 
   addtoDOM() {
@@ -68,6 +69,7 @@ class SpkButton {
       if (speech != null) {
         // TODO: Explore streaming with the LLM.
         insertTextAtCursor(this.targetEl, speech);
+        this.targetValueAfterInsertion = this.targetEl.value;
       }
 
       this.targetEl.disabled = false;
@@ -77,9 +79,22 @@ class SpkButton {
       this.targetEl.focus();
     });
 
-    this.targetEl.addEventListener("focusout", () => {
-      if (!this.listening) {
-        this.buttonEl.remove();
+    this.targetEl.addEventListener("focusout", async () => {
+      if (this.listening) {
+        return;
+      }
+
+      this.buttonEl.remove();
+
+      const currentTargetValue = this.targetEl.value;
+      if (
+        this.targetValueAfterInsertion &&
+        currentTargetValue !== this.targetValueAfterInsertion
+      ) {
+        await recognizer.recordUserEdit(
+          this.targetValueAfterInsertion,
+          currentTargetValue
+        );
       }
     });
   }

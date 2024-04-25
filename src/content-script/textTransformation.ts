@@ -1,11 +1,11 @@
 import { OpenAI } from "@langchain/openai";
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate, FewShotPromptTemplate } from "@langchain/core/prompts";
 import {
   CommaSeparatedListOutputParser,
   StringOutputParser,
 } from "@langchain/core/output_parsers";
 
-import { getOpenAIAPIKey } from "../env";
+import { UserEdit, getOpenAIAPIKey } from "../storage";
 
 async function getGPT3_5Model() {
   return new OpenAI({
@@ -34,7 +34,6 @@ export async function listProperNouns(text: string): Promise<string[]> {
   `);
   const model = await getGPT4Model();
   const chain = prompt.pipe(model).pipe(outputParser);
-  console.log(chain);
   const result = await chain.invoke({
     text,
     formatInstructions: outputParser.getFormatInstructions(),
@@ -59,11 +58,21 @@ async function punctuateText(text: string): Promise<string> {
   return result.trim();
 }
 
+// TODO: Use vector similarity with text to narrow down examples to relevant one's.
 async function correctErrors(
   text: string,
-  properNouns: string[]
+  properNouns: string[],
+  userEdits: UserEdit[]
 ): Promise<string> {
-  const prompt = PromptTemplate.fromTemplate(`
+  const examplePrompt = PromptTemplate.fromTemplate(`
+    Input: {beforeEdit}
+    Response: {afterEdit}
+  `);
+  const prompt = new FewShotPromptTemplate({
+    examples: userEdits as unknown as Record<string, string>[],
+    examplePrompt,
+    inputVariables: ["properNouns", "text"],
+    prefix: `
       You are an excellent English transcriber. The following text was transcribed badly, and
       certain proper nouns were replaced with other words that sound similar. Rewrite the text
       to fix those mistakes. Only modify the text if there are mistakes, otherwise return the
@@ -72,14 +81,14 @@ async function correctErrors(
       Here are some proper nouns that might be present in the text and might have been trascribed
       incorrectly: {properNouns}
 
-      Here is one example:
-      Input: I had a great time in Food and Polly, eating pav bhaji for lunch.
-      Response: I had a great time in Puranpoli, eating pav bhaji for lunch.
-
+      Here are some examples of inputs with the corrected responses:
+    `,
+    suffix: `
       Now rewrite the following text:
       Input: {text}
       Response:
-    `);
+    `,
+  });
 
   const outputParser = new StringOutputParser();
   const chain = prompt.pipe(await getGPT4Model()).pipe(outputParser);
@@ -117,10 +126,15 @@ async function validateCorrection(
 
 export async function improveTextTranscription(
   text: string,
-  properNouns: string[]
+  properNouns: string[],
+  userEdits: UserEdit[]
 ): Promise<string> {
   const punctuatedText = await punctuateText(text);
-  const correctedText = await correctErrors(punctuatedText, properNouns);
+  const correctedText = await correctErrors(
+    punctuatedText,
+    properNouns,
+    userEdits
+  );
   const correctionIsValid = await validateCorrection(
     punctuatedText,
     correctedText
