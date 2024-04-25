@@ -11,31 +11,44 @@ function polyfillSpeechAPIs() {
 
 class SpeechRecognizer {
   private recognition: SpeechRecognition;
+  private properNouns: string[] = [];
 
   constructor(language: string = "en-US") {
     this.recognition = new SpeechRecognition();
     this.recognition.lang = language;
-    this.recognition;
+    this.recognition.maxAlternatives = 5;
+
+    transform
+      .listProperNouns(document.body.innerText)
+      .then((properNouns) => (this.properNouns = properNouns));
   }
 
   async recognize(): Promise<string | null> {
     return new Promise((resolve) => {
+      let receivedResults = false;
       this.recognition.addEventListener(
         "result",
-        (event) => {
-          console.log(event);
-          const result = event.results[0][0].transcript;
-          resolve(result);
+        async (event) => {
+          receivedResults = true;
+          console.log("speech recognition results", event.results);
+          const rawSpeech = event.results[0][0].transcript;
+          const correctedSpeech = await transform.transform(
+            rawSpeech,
+            this.properNouns
+          );
+          resolve(correctedSpeech);
         },
         { once: true }
       );
-      // TODO: Restart speech recognizer once more, in case user had a big pause.
+      // TODO: Retry speech recognizer one time, in case user had a big pause.
       // TODO: Add the ability to abort speech recognition
       this.recognition.addEventListener(
         "end",
         (event) => {
-          console.log("ended", event);
-          resolve(null);
+          console.log("speech recognition ended", event);
+          if (!receivedResults) {
+            resolve(null);
+          }
         },
         { once: true }
       );
@@ -75,9 +88,9 @@ class SpkButton {
     return spkButton;
   }
 
-  constructor(private targetEl: HTMLTextAreaElement) {}
   private buttonEl: HTMLButtonElement = SpkButton.createButtonEl();
   private listening: boolean = false;
+  constructor(private targetEl: HTMLTextAreaElement) {}
 
   addtoDOM() {
     this.buttonEl.style.position = "absolute";
@@ -112,8 +125,7 @@ class SpkButton {
 
       if (speech != null) {
         // TODO: Explore streaming with the LLM.
-        const correctedSpeech = await transform.transform(speech);
-        insertTextAtCursor(this.targetEl, correctedSpeech);
+        insertTextAtCursor(this.targetEl, speech);
       }
 
       this.targetEl.disabled = false;

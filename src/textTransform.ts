@@ -1,6 +1,9 @@
 import { OpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
+import {
+  CommaSeparatedListOutputParser,
+  StringOutputParser,
+} from "@langchain/core/output_parsers";
 
 import { getOpenAIAPIKey } from "./env";
 
@@ -20,6 +23,23 @@ async function getGPT4Model() {
   });
 }
 
+export async function listProperNouns(text: string): Promise<string[]> {
+  const outputParser = new CommaSeparatedListOutputParser();
+  const prompt = PromptTemplate.fromTemplate(`
+    List out the proper nouns in the following text. {formatInstructions}
+
+    {text}
+  `);
+  const model = await getGPT4Model();
+  const chain = prompt.pipe(model).pipe(outputParser);
+  console.log(chain);
+  const result = await chain.invoke({
+    text,
+    formatInstructions: outputParser.getFormatInstructions(),
+  });
+  return result;
+}
+
 async function punctuateText(text: string): Promise<string> {
   const prompt = new PromptTemplate({
     inputVariables: ["text"],
@@ -37,27 +57,35 @@ async function punctuateText(text: string): Promise<string> {
   return result.trim();
 }
 
-async function correctErrors(text: string): Promise<string> {
-  const prompt = new PromptTemplate({
-    inputVariables: ["text"],
-    template: `
+async function correctErrors(
+  text: string,
+  properNouns: string[]
+): Promise<string> {
+  const prompt = PromptTemplate.fromTemplate(`
       You are an excellent English transcriber. The following text was transcribed badly, and
       certain proper nouns were replaced with other words that sound similar. Rewrite the text
       to fix those mistakes. Only modify the text if there are mistakes, otherwise return the
       same text.
 
-      Here is one example. Note how the bolded part was corrected.
-      Input: I had a great time in **Food and Polly**, eating pav bhaji for lunch.
-      Response: I had a great time in **Pooranpoli**, eating pav bhaji for lunch.
+      Here are some proper nouns that might be present in the text and might have been trascribed
+      incorrectly: {properNouns}
 
+      Here is one example:
+      Input: I had a great time in Food and Polly, eating pav bhaji for lunch.
+      Response: I had a great time in Puranpoli, eating pav bhaji for lunch.
+
+      Now rewrite the following text:
       Input: {text}
-      Response: 
-    `,
-  });
+      Response:
+    `);
 
   const outputParser = new StringOutputParser();
   const chain = prompt.pipe(await getGPT4Model()).pipe(outputParser);
-  const result = await chain.invoke({ text });
+  let result = await chain.invoke({
+    properNouns: properNouns.join(", "),
+    text,
+  });
+  result = result.trim();
   return result.trim();
 }
 
@@ -82,13 +110,15 @@ async function validateCorrection(
   const chain = prompt.pipe(await getGPT3_5Model()).pipe(outputParser);
 
   const result = await chain.invoke({ originalText, correctedText });
-  console.log(originalText, correctedText);
   return result.trim().toLowerCase() == "yes";
 }
 
-export async function transform(speech: string): Promise<string> {
+export async function transform(
+  speech: string,
+  properNouns: string[]
+): Promise<string> {
   const punctuatedSpeech = await punctuateText(speech);
-  const correctedSpeech = await correctErrors(punctuatedSpeech);
+  const correctedSpeech = await correctErrors(punctuatedSpeech, properNouns);
   const correctionIsValid = await validateCorrection(
     punctuatedSpeech,
     correctedSpeech
