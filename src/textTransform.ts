@@ -12,6 +12,7 @@ async function getGPT3_5Model() {
     apiKey: await getOpenAIAPIKey(),
     openAIApiKey: await getOpenAIAPIKey(),
     model: "gpt-3.5-turbo-instruct",
+    modelName: "gpt-3.5-turbo-instruct",
   });
 }
 
@@ -20,6 +21,7 @@ async function getGPT4Model() {
     apiKey: await getOpenAIAPIKey(),
     openAIApiKey: await getOpenAIAPIKey(),
     model: "gpt-4-turbo",
+    modelName: "gpt-4-turbo",
   });
 }
 
