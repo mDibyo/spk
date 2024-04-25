@@ -9,7 +9,7 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["index.ts"]
+      "js": ["content-script/index.ts"]
     }
   ]
 }

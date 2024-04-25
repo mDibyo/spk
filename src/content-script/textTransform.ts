@@ -5,7 +5,7 @@ import {
   StringOutputParser,
 } from "@langchain/core/output_parsers";
 
-import { getOpenAIAPIKey } from "./env";
+import { getOpenAIAPIKey } from "../env";
 
 async function getGPT3_5Model() {
   return new OpenAI({

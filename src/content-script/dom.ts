@@ -1,62 +1,4 @@
-import * as transform from "./textTransform";
-
-function polyfillSpeechAPIs() {
-  window.SpeechRecognition =
-    window.SpeechRecognition || webkitSpeechRecognition;
-  window.SpeechGrammarList =
-    window.SpeechGrammarList || window.webkitSpeechGrammarList;
-  window.SpeechRecognitionEvent =
-    window.SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
-}
-
-class SpeechRecognizer {
-  private recognition: SpeechRecognition;
-  private properNouns: string[] = [];
-
-  constructor(language: string = "en-US") {
-    this.recognition = new SpeechRecognition();
-    this.recognition.lang = language;
-    this.recognition.maxAlternatives = 5;
-
-    transform
-      .listProperNouns(document.body.innerText)
-      .then((properNouns) => (this.properNouns = properNouns));
-  }
-
-  async recognize(): Promise<string | null> {
-    return new Promise((resolve) => {
-      let receivedResults = false;
-      this.recognition.addEventListener(
-        "result",
-        async (event) => {
-          receivedResults = true;
-          console.log("speech recognition results", event.results);
-          const rawSpeech = event.results[0][0].transcript;
-          const correctedSpeech = await transform.transform(
-            rawSpeech,
-            this.properNouns
-          );
-          resolve(correctedSpeech);
-        },
-        { once: true }
-      );
-      // TODO: Retry speech recognizer one time, in case user had a big pause.
-      // TODO: Add the ability to abort speech recognition
-      this.recognition.addEventListener(
-        "end",
-        (event) => {
-          console.log("speech recognition ended", event);
-          if (!receivedResults) {
-            resolve(null);
-          }
-        },
-        { once: true }
-      );
-
-      this.recognition.start();
-    });
-  }
-}
+import { SpeechRecognizer } from "./speechRecognition";
 
 function insertTextAtCursor(textAreaEl: HTMLTextAreaElement, newText: string) {
   const currentValue = textAreaEl.value;
@@ -143,7 +85,7 @@ class SpkButton {
   }
 }
 
-function modifyTextarea(
+export function modifyTextarea(
   recognizer: SpeechRecognizer,
   textArea: HTMLTextAreaElement
 ) {
@@ -151,32 +93,3 @@ function modifyTextarea(
   spkButton.addtoDOM();
   spkButton.addInteractions(recognizer);
 }
-
-function elementIsTextArea(el: HTMLElement): el is HTMLTextAreaElement {
-  const tagName = el.tagName?.toLowerCase();
-  return tagName === "textarea";
-}
-
-function main() {
-  const recognizer = new SpeechRecognizer();
-
-  window.addEventListener("focusin", (event) => {
-    console.log(event.target);
-    if (event.target == null) {
-      return;
-    }
-
-    const target = event.target as HTMLElement;
-    if (elementIsTextArea(target)) {
-      modifyTextarea(recognizer, target);
-    }
-    // TODO: Add support for contenteditable div's like Gmail's message box
-  });
-}
-
-function init() {
-  polyfillSpeechAPIs();
-  main();
-}
-
-init();
