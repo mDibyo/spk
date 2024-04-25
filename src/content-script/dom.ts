@@ -54,12 +54,15 @@ class SpkButton {
   }
 
   addInteractions(recognizer: SpeechRecognizer) {
+    // TODO: Test this on mobile device to see if other handlers need to be added.
     this.buttonEl.addEventListener("mousedown", (event) => {
       // prevent textarea from being unfocused when the spk button is clicked.
       event.preventDefault();
     });
 
-    // TODO: Add mode to auto-start speech recognition when focusing into textarea.
+    // TODO: Add the option to auto-start speech recognition when focusing into textarea
+    // (instead of having to click on "spk" button).
+    // TODO: Test this on mobile device to see if other handlers need to be added.
     this.buttonEl.addEventListener("click", async () => {
       this.listening = true;
       this.buttonEl.disabled = true; // TODO: Add further indication that speech recognition is happening
@@ -68,7 +71,7 @@ class SpkButton {
       const speech = await recognizer.recognize();
 
       if (speech != null) {
-        // TODO: Explore streaming with the LLM.
+        // TODO: Explore LLM streaming APIs.
         insertTextAtCursor(this.targetEl, speech);
         this.targetValueAfterInsertion = this.targetEl.value;
       }

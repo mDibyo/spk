@@ -36,8 +36,10 @@ export class SpeechRecognizer {
         },
         { once: true }
       );
-      // TODO: Retry speech recognizer one time, in case user had a big pause.
-      // TODO: Add the ability to abort speech recognition
+      // TODO: Retry speech recognizer in a loop in case the user wants to keep dictating. Speech
+      // recognition should only be stopped if there is a long pause, or if the user explicitly
+      // aborts recognition.
+      // TODO: Add the ability for the user to abort speech recognition.
       this.recognition.addEventListener(
         "end",
         (event) => {

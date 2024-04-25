@@ -28,7 +28,7 @@ function main() {
     if (elementIsTextArea(target)) {
       modifyTextarea(recognizer, target);
     }
-    // TODO: Add support for contenteditable div's like Gmail's message box
+    // TODO: Add support for contenteditable div's like Gmail's message box, and for "text" input boxes
   });
 }
 
