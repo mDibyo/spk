@@ -13,6 +13,10 @@ The spk extension is active as soon as any webpage is loaded:
 
 ## Development
 
+### OpenAI API Key
+
+The extension in its current state requires that the user provide an Open API key for access to Open AI's LLMs. You will be able to add it in the "spk" extension dialog (accessed by clicking the "spk" Chrome extension icon in the Chrome browser).
+
 ### Install dependencies
 
 This project requires node (v18+). If your system node version is not up-to-date, consider using a version manager like [NVM](https://github.com/nvm-sh/nvm) to install and manage node versions.
@@ -31,6 +35,8 @@ EXAMPLE=best_food npm run start-example
 
 If the `EXAMPLE` environment variable is not defined, the "default" example will be started.
 
+**You can also skip this step and open any webpage.**
+
 ### Build Chrome extension and load into browser
 
 In a separate terminal, run
@@ -40,6 +46,12 @@ npm start
 ```
 
 This will create an unpacked version of the extension in a `dist` folder. Load the unpacked extension in Chrome following instructions [here](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked).
+
+Add your Open AI key, as noted above.
+
+Then go to any page.
+
+**Note**: The autoreload behavior of the development version of the extension, makes it so that every tab reloads when a change is made to the extension(!). To avoid this, you can narrow down the set of domains the extension is active on, by changing the src/manifest.json file - update the "content_scripts"."matches" field to `["*://localhost:*/*"]`.
 
 ## Release
 
