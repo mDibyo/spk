@@ -26,6 +26,7 @@ function insertTextAtCursor(textAreaEl: HTMLTextAreaElement, newText: string) {
 class SpkButton {
   static createButtonEl() {
     const spkButton = document.createElement("button");
+    spkButton.classList.add("spk");
     spkButton.textContent = "spk";
     return spkButton;
   }
