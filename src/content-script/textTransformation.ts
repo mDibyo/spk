@@ -115,19 +115,19 @@ async function validateCorrection(
   return result.trim().toLowerCase() == "yes";
 }
 
-export async function transform(
-  speech: string,
+export async function improveTextTranscription(
+  text: string,
   properNouns: string[]
 ): Promise<string> {
-  const punctuatedSpeech = await punctuateText(speech);
-  const correctedSpeech = await correctErrors(punctuatedSpeech, properNouns);
+  const punctuatedText = await punctuateText(text);
+  const correctedText = await correctErrors(punctuatedText, properNouns);
   const correctionIsValid = await validateCorrection(
-    punctuatedSpeech,
-    correctedSpeech
+    punctuatedText,
+    correctedText
   );
   if (correctionIsValid) {
-    return correctedSpeech;
+    return correctedText;
   } else {
-    return punctuatedSpeech;
+    return punctuatedText;
   }
 }

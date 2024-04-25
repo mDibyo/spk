@@ -1,4 +1,7 @@
-import * as transform from "./textTransform";
+import {
+  improveTextTranscription,
+  listProperNouns,
+} from "./textTransformation";
 
 export class SpeechRecognizer {
   private recognition: SpeechRecognition;
@@ -9,9 +12,9 @@ export class SpeechRecognizer {
     this.recognition.lang = language;
     this.recognition.maxAlternatives = 5;
 
-    transform
-      .listProperNouns(document.body.innerText)
-      .then((properNouns) => (this.properNouns = properNouns));
+    listProperNouns(document.body.innerText).then(
+      (properNouns) => (this.properNouns = properNouns)
+    );
   }
 
   async recognize(): Promise<string | null> {
@@ -22,12 +25,12 @@ export class SpeechRecognizer {
         async (event) => {
           receivedResults = true;
           console.log("speech recognition results", event.results);
-          const rawSpeech = event.results[0][0].transcript;
-          const correctedSpeech = await transform.transform(
-            rawSpeech,
+          const rawText = event.results[0][0].transcript;
+          const correctedText = await improveTextTranscription(
+            rawText,
             this.properNouns
           );
-          resolve(correctedSpeech);
+          resolve(correctedText);
         },
         { once: true }
       );
