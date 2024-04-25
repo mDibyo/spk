@@ -45,6 +45,29 @@ class SpeechRecognizer {
   }
 }
 
+function insertTextAtCursor(textAreaEl: HTMLTextAreaElement, newText: string) {
+  const currentValue = textAreaEl.value;
+  const currentCursorIdx = textAreaEl.selectionEnd || currentValue.length;
+
+  const prefix = currentValue.slice(0, currentCursorIdx);
+  const suffix = currentValue.slice(currentCursorIdx);
+  let newValue = prefix;
+  if (prefix.length > 0 && !/\s$/.test(prefix)) {
+    // `prefix` doesn't end with a space character
+    newValue += " ";
+  }
+  newValue += newText;
+  const newCursorIdx = newValue.length;
+  if (suffix.length > 0 && !/^\s/.test(suffix)) {
+    // `suffix` doesn't start with a space character
+    newValue += " ";
+  }
+  newValue += suffix;
+
+  textAreaEl.value = newValue;
+  textAreaEl.selectionStart = textAreaEl.selectionEnd = newCursorIdx;
+}
+
 class SpkButton {
   static createButtonEl() {
     const spkButton = document.createElement("button");
@@ -90,8 +113,7 @@ class SpkButton {
       if (speech != null) {
         // TODO: Explore streaming with the LLM.
         const correctedSpeech = await transform.transform(speech);
-        // TODO: If there is a space already, don't add more.
-        this.targetEl.value += " " + correctedSpeech;
+        insertTextAtCursor(this.targetEl, correctedSpeech);
       }
 
       this.targetEl.disabled = false;
@@ -99,8 +121,6 @@ class SpkButton {
       this.listening = false;
 
       this.targetEl.focus();
-      this.targetEl.selectionStart = this.targetEl.selectionEnd =
-        this.targetEl.value.length;
     });
 
     this.targetEl.addEventListener("focusout", () => {
