@@ -79,18 +79,19 @@ class SpkButton {
       event.preventDefault();
     });
 
+    // TODO: Add mode to auto-start speech recognition when focusing into textarea.
     this.buttonEl.addEventListener("click", async () => {
       this.listening = true;
       this.buttonEl.disabled = true; // TODO: Add further indication that speech recognition is happening
       this.targetEl.disabled = true;
 
       const speech = await recognizer.recognize();
-      console.log("received", speech);
 
       if (speech != null) {
         // TODO: Explore streaming with the LLM.
-        const punctuatedSpeech = await transform.punctuateText(speech);
-        this.targetEl.value += " " + punctuatedSpeech;
+        const correctedSpeech = await transform.transform(speech);
+        // TODO: If there is a space already, don't add more.
+        this.targetEl.value += " " + correctedSpeech;
       }
 
       this.targetEl.disabled = false;
