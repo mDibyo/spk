@@ -1,3 +1,5 @@
+import * as transform from "./textTransform";
+
 function polyfillSpeechAPIs() {
   window.SpeechRecognition =
     window.SpeechRecognition || webkitSpeechRecognition;
@@ -83,9 +85,12 @@ class SpkButton {
       this.targetEl.disabled = true;
 
       const speech = await recognizer.recognize();
+      console.log("received", speech);
 
       if (speech != null) {
-        this.targetEl.textContent += " " + speech;
+        // TODO: Explore streaming with the LLM.
+        const punctuatedSpeech = await transform.punctuateText(speech);
+        this.targetEl.value += " " + punctuatedSpeech;
       }
 
       this.targetEl.disabled = false;
